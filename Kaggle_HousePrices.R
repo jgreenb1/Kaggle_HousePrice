@@ -657,47 +657,29 @@ submit_lm<-cbind(test$Id,predict_lm)
 colnames(submit_lm)<-c("Id","SalePrice")
 write.csv(submit_lm,"Submit_LinearModel_20161224.csv",row.names=F)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```
-
-###A Random Forest
-
-Not too bad, given that this is just an LM. Let's try training the model with an RF. Let's use all the variables and see how things look, since randomforest does its own feature selection.
-
-```{r caret1}
-
+###### Random Forecast model
 model_1 <- randomForest(SalePrice ~ ., data=training)
 
-
 # Predict using the test set
-prediction <- predict(model_1, testing)
-model_output <- cbind(testing, prediction)
+prediction_rf <- predict(model_1, testing)
+model_output_rf <- cbind(testing, prediction_rf)
 
-
-model_output$log_prediction <- log(model_output$prediction)
-model_output$log_SalePrice <- log(model_output$SalePrice)
+model_output_rf$log_prediction <- log(model_output_rf$prediction)
+model_output_rf$log_SalePrice <- log(model_output_rf$SalePrice)
 
 #Test with RMSE
 
-rmse(model_output$log_SalePrice,model_output$log_prediction)
+rmse(model_output_rf$log_SalePrice,model_output_rf$log_prediction)
+
+#### Full Prediction
+predict_rf<-predict(model_1,test)
+submit_rf<-cbind(test$Id,predict_rf)
+colnames(submit_rf)<-c("Id","SalePrice")
+submit_rf<-as.data.frame(submit_rf)
+submit_rf$SalePrice[is.na(submit_rf$SalePrice)]<-mean(na.omit(submit_rf$SalePrice))
+write.csv(submit_rf,"Submit_RandomForect_20161230.csv",row.names=F)
+
+
 
 
 ```
