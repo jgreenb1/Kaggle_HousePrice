@@ -668,43 +668,33 @@ model_output_rf$log_prediction <- log(model_output_rf$prediction)
 model_output_rf$log_SalePrice <- log(model_output_rf$SalePrice)
 
 #Test with RMSE
-
 rmse(model_output_rf$log_SalePrice,model_output_rf$log_prediction)
 
+## Train model on full set
+model_1a <- randomForest(SalePrice ~ ., data=training)
+
 #### Full Prediction
-predict_rf<-predict(model_1,test)
+predict_rf<-predict(model_1a,test)
 submit_rf<-cbind(test$Id,predict_rf)
 colnames(submit_rf)<-c("Id","SalePrice")
 submit_rf<-as.data.frame(submit_rf)
 submit_rf$SalePrice[is.na(submit_rf$SalePrice)]<-mean(na.omit(submit_rf$SalePrice))
-write.csv(submit_rf,"Submit_RandomForect_20161230.csv",row.names=F)
+write.csv(submit_rf,"Submit_RandomForest2_20161230.csv",row.names=F)
 
-
-
-
-```
-
-###An xgboost
-Nice! Try it with xgboost?
-
-```{r matrices}
-
+###### XGBoost
 #Assemble and format the data
-
-training$log_SalePrice <- log(training$SalePrice)
-testing$log_SalePrice <- log(testing$SalePrice)
+training2<-training
+testing2<-testing
+training2$log_SalePrice <- log(training2$SalePrice)
+testing2$log_SalePrice <- log(testing2$SalePrice)
 
 #Create matrices from the data frames
-trainData<- as.matrix(training, rownames.force=NA)
-testData<- as.matrix(testing, rownames.force=NA)
+trainData<- as.matrix(training2, rownames.force=NA)
+testData<- as.matrix(testing2, rownames.force=NA)
 
 #Turn the matrices into sparse matrices
 train2 <- as(trainData, "sparseMatrix")
 test2 <- as(testData, "sparseMatrix")
-
-#####
-#colnames(train2)
-#Cross Validate the model
 
 vars <- c(2:37, 39:86) #choose the columns we want to use in the prediction matrix
 
@@ -737,7 +727,6 @@ eta = 0.02,
 eval_metric = "rmse",
 objective="reg:linear")
 
-
 #Train the model using those parameters
 bstSparse <-
 xgb.train(params = param,
@@ -747,11 +736,7 @@ watchlist = list(train = trainD),
 verbose = TRUE,
 print_every_n = 50,
 nthread = 2)
-```
 
-
-Predict and test the RMSE.
-```{r evaluate1}
 testD <- xgb.DMatrix(data = test2[,vars])
 #Column names must match the inputs EXACTLY
 prediction <- predict(bstSparse, testD) #Make the prediction based on the half of the training data set aside
@@ -769,16 +754,7 @@ model_output$log_SalePrice <- log(model_output$SalePrice)
 
 rmse(model_output$log_SalePrice,model_output$log_prediction)
 
-```
-
-Nice, that's pretty good stuff. I'll take the xgboost I think, let's call that good and make up the submission. Honestly, this is where the interesting stuff basically ends, unless you want to see the retraining and submission formatting.
-
-***
-  
-  
-  ##Retrain on the full sample
-  
-  ```{r retrain}
+## Retrain on full sample
 rm(bstSparse)
 
 #Create matrices from the data frames
